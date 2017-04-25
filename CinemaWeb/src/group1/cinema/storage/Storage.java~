@@ -1,0 +1,535 @@
+package group1.cinema.storage;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import group1.cinema.core.Screening;
+import group1.cinema.core.Auditorium;
+import group1.cinema.core.Cinema;
+import group1.cinema.core.Movie;
+import group1.cinema.core.Seat;
+import group1.cinema.core.Ticket;
+
+/**
+ * Storage API
+ * 
+ * @author Emil Bertilsson
+ */
+public final class Storage {
+
+    /**
+     * Connection interface
+     */
+    private static Connection conn;
+
+    /**
+     * Sets the connection interface for the storage
+     *
+     * @param conn Connection interface
+     */
+    public static final void useConnection(Connection conn) {
+        Storage.conn = conn;
+    }
+
+    // RETRIEVERS
+
+    /**
+     * Retrieves a single movie entry from the database or returns null if the
+     * movie was not found
+     * 
+     * @param id Movie ID
+     * @return Found movie object or null if nothing was found
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final Movie retrieveMovie(int id)
+            throws SQLSyntaxErrorException, SQLException {
+        Movie mov = null;
+
+        // SQL Query
+        String sql = "CALL `retrieveMovie`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, id);
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        if (sqlResult.next()) {
+            // Sets the values
+            mov = new Movie(sqlResult.getString("title"),
+                    sqlResult.getInt("duration"),
+                    sqlResult.getString("description"),
+                    sqlResult.getInt("ageRequirement"),
+                    sqlResult.getInt("year"),
+                    sqlResult.getString("genre"),
+                    sqlResult.getString("language"));
+
+            // Sets the movie ID to match the retrieved ID
+            mov.setId(id);
+        }
+
+        return mov;
+    }
+
+    /**
+     * Retrieves a single auditorium entry from the database or returns null if
+     * the movie was not found
+     * 
+     * @param id Auditorium ID
+     * @return Found auditorium object or null if nothing was found
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final Auditorium retrieveAuditorium(int id)
+            throws SQLSyntaxErrorException, SQLException {
+        Auditorium aud = null;
+
+        // SQL Query
+        String sql = "CALL `retrieveAuditorium`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, id);
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        if (sqlResult.next()) {
+            // Sets the values
+            aud = new Auditorium(sqlResult.getString("name"));
+
+            // Sets the auditorium ID to match the retrieved ID
+            aud.setId(id);
+        }
+
+        return aud;
+    }
+
+    /**
+     * Retrieves a single auditorium entry from the database or returns null if
+     * the movie was not found
+     * 
+     * @param id Auditorium ID
+     * @return Found auditorium object or null if nothing was found
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final Screening retrieveScreening(int id)
+            throws SQLSyntaxErrorException, SQLException {
+        Screening scr = null;
+
+        // SQL Query
+        String sql = "CALL `retrieveScreening`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, id);
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        if (sqlResult.next()) {
+            // Sets the values
+            scr = new Screening(
+                    null,
+                    sqlResult.getInt("price"),
+                    ZonedDateTime.parse(sqlResult.getString("startTime"), Cinema.DATE_FORMATTER),
+                    ZonedDateTime.parse(sqlResult.getString("endTime"), Cinema.DATE_FORMATTER));
+
+            // Sets the screening ID to match the retrieved ID
+            scr.setId(id);
+        }
+
+        return scr;
+    }
+
+    /**
+     * Retrieves the collection of movies for the cinema
+     * 
+     * @return Found movie collection or empty list
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final List<Movie> retrieveMovieCollection()
+            throws SQLSyntaxErrorException, SQLException {
+        final List<Movie> result = new ArrayList<>();
+
+        // SQL Query
+        String sql = "CALL `retrieveMovieCollection`();";
+
+        final Statement statement = conn.createStatement();
+        statement.closeOnCompletion();
+
+        final ResultSet sqlResult = statement.executeQuery(sql);
+
+        while (sqlResult.next()) {
+            // Creates a new movie object from the sql result row
+            Movie movie = new Movie(
+                    sqlResult.getString("title"),
+                    sqlResult.getInt("duration"),
+                    sqlResult.getString("description"),
+                    sqlResult.getInt("ageRequirement"),
+                    sqlResult.getInt("year"),
+                    sqlResult.getString("genre"),
+                    sqlResult.getString("language"));
+
+            // Sets the movie ID to match the retrieved ID
+            movie.setId(sqlResult.getInt("id"));
+
+            // Add the movie to the result list
+            result.add(movie);
+        }
+
+        return result;
+    }
+
+    /**
+     * Retrieves the cinema's auditoriums
+     * 
+     * @param includeSeats Set to true in order to include the auditorium seats
+     * @return Found auditorium collection or empty list
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final List<Auditorium> retrieveAuditoriumCollection(boolean includeSeats)
+            throws SQLSyntaxErrorException, SQLException {
+        final List<Auditorium> result = new ArrayList<>();
+
+        // SQL Query
+        String sql = "CALL `retrieveAuditoriumCollection`();";
+
+        final Statement statement = conn.createStatement();
+        statement.closeOnCompletion();
+
+        final ResultSet sqlResult = statement.executeQuery(sql);
+
+        while (sqlResult.next()) {
+            // Creates a new auditorium object from the sql result row
+            Auditorium auditorium = new Auditorium(sqlResult.getString("name"));
+            auditorium.setId(sqlResult.getInt("id"));
+
+            // Add the auditorium to the result list
+            result.add(auditorium);
+        }
+
+        // Adds the seats
+        if (includeSeats) {
+            for (Auditorium aud : result) {
+                aud.setSeats(retrieveAuditoriumSeats(aud));
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Retrieves the set of seats avaiable from the given auditorium
+     * 
+     * @param auditorium Auditorium
+     * @return Found seats or empty list
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final List<Seat> retrieveAuditoriumSeats(Auditorium auditorium)
+            throws SQLSyntaxErrorException, SQLException {
+        final List<Seat> result = new ArrayList<>();
+
+        // SQL Query
+        String sql = "CALL `retrieveAuditoriumSeats`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, auditorium.getId());
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        while (sqlResult.next()) {
+            // Creates a new seat object from the sql result row
+            Seat seat = new Seat(sqlResult.getInt("row"),
+                    sqlResult.getInt("col"));
+
+            // Add the seat to the result list
+            result.add(seat);
+        }
+
+        return result;
+    }
+
+    /**
+     * Retrieves the set of seats available from the given screening
+     * 
+     * @param screening Screening
+     * @return Found seats or empty list
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static final List<Seat> retrieveScreeningSeats(Screening screening)
+            throws SQLSyntaxErrorException, SQLException {
+        final List<Seat> result = new ArrayList<>();
+
+        // SQL Query
+        String sql = "CALL `retrieveScreeningSeats`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, screening.getId());
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        while (sqlResult.next()) {
+            // Creates a new seat object from the sql result row
+            Seat seat = new Seat(sqlResult.getInt("row"),
+                    sqlResult.getInt("col"));
+
+            // Add the seat to the result list
+            result.add(seat);
+        }
+
+        return result;
+    }
+
+    /**
+     * Retrieves all screenings from the given auditorium
+     *
+     * @param cinema Cinema object
+     * @param auditorium Target auditorium
+     * @return True if the screening was stored, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static List<Screening> retrieveAllScreenings(Cinema cinema, Auditorium auditorium)
+            throws SQLSyntaxErrorException, SQLException {
+        final List<Screening> result = new ArrayList<>();
+
+        // SQL Query
+        String sql = "CALL `retrieveAllScreenings`(?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, auditorium.getId());
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        while (sqlResult.next()) {
+            // Creates a new seat object from the sql result row
+            Screening scr = new Screening(
+                    cinema.findMovie(sqlResult.getInt("movie_id")),
+                    sqlResult.getInt("price"),
+                    ZonedDateTime.parse(sqlResult.getString("startTime"), Cinema.DATE_FORMATTER),
+                    ZonedDateTime.parse(sqlResult.getString("endTime"), Cinema.DATE_FORMATTER));
+            scr.setId(sqlResult.getInt("id"));
+
+            // Add the seat to the result list
+            result.add(scr);
+        }
+
+        return result;
+    }
+
+    // STORERS
+
+    /**
+     * Stores a movie in the database
+     * 
+     * @param movie Movie
+     * @return True if the movie was stored, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean storeMovie(Movie movie)
+            throws SQLSyntaxErrorException, SQLException {
+        // SQL Query
+        String sql = "CALL `storeMovie`(?, ?, ?, ?, ?, ?, ?, ?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Only include the ID if it was set
+        if (movie.getId() <= 0) {
+            statement.setNull(1, Types.INTEGER);
+        } else {
+            statement.setInt(1, movie.getId());
+        }
+
+        // Set the statement values
+        statement.setString(2, movie.getTitle());
+        statement.setInt(3, movie.getDuration());
+        statement.setString(4, movie.getDescription());
+        statement.setInt(5, movie.getAgeRequirement());
+        statement.setInt(6, movie.getYear());
+        statement.setString(7, movie.getGenre());
+        statement.setString(8, movie.getLanguage());
+
+        int result = statement.executeUpdate();
+
+        return result >= 1;
+    }
+
+    /**
+     * Stores an auditorium in the database
+     * 
+     * @param auditorium Auditorium
+     * @return True if the auditorium was stored, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean storeAuditorium(Auditorium auditorium)
+            throws SQLSyntaxErrorException, SQLException {
+        // SQL Query
+        String sql = "CALL `storeAuditorium`(?, ?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Only include the ID if it was set
+        if (auditorium.getId() <= 0) {
+            statement.setNull(1, Types.INTEGER);
+        } else {
+            statement.setInt(1, auditorium.getId());
+        }
+
+        // Set the statement values
+        statement.setString(2, auditorium.getName());
+
+        int result = statement.executeUpdate();
+
+        return result >= 1;
+    }
+
+    /**
+     * Stores a screening in the database
+     * 
+     * @param auditorium Target auditorium
+     * @param screening Screening object
+     * @return True if the screening was stored, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean storeScreening(Auditorium auditorium, Screening screening)
+            throws SQLSyntaxErrorException, SQLException {
+        // SQL Query
+        String sql = "CALL `storeScreening`(?, ?, ?, ?, ?, ?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Only include the ID if it was set
+        if (screening.getId() <= 0) {
+            statement.setNull(1, Types.INTEGER);
+        } else {
+            statement.setInt(1, screening.getId());
+        }
+
+        // Set the statement values
+        statement.setInt(2, screening.getActiveMovie().getId());
+        statement.setInt(3, auditorium.getId());
+        statement.setInt(4, screening.getPrice());
+        statement.setString(5, screening.getStartTime().toString());
+        statement.setString(6, screening.getEndTime().toString());
+
+        int result = statement.executeUpdate();
+
+        return result >= 1;
+    }
+
+    /**
+     * Stores a ticket in the database
+     * 
+     * @param ticket Ticket object
+     * @return UUID if the ticket was stored, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean storeAndCreateTicket(Ticket ticket)
+            throws SQLSyntaxErrorException, SQLException {
+        boolean success = false;
+
+        // SQL Query
+        String sql = "CALL `storeAndCreateTicket`(?, ?, ?);";
+
+        final PreparedStatement statement = conn.prepareStatement(sql);
+        statement.closeOnCompletion();
+
+        // Set the statement values
+        statement.setInt(1, ticket.getScreening().getId());
+        statement.setInt(2, ticket.getSeatId());
+        statement.setInt(3, ticket.getPrice());
+
+        final ResultSet sqlResult = statement.executeQuery();
+
+        while (sqlResult.next()) {
+            ticket.setUUID(sqlResult.getInt(1));
+            success = true;
+        }
+
+        return success;
+    }
+
+    /**
+     * Deletes an auditorium from the storage
+     *
+     * @param id Auditorium ID
+     * @return True if the auditorium was found and successfully removed, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean deleteAuditorium(int id)
+	throws SQLSyntaxErrorException, SQLException
+    {
+	// SQL Query
+	String sql = "CALL `deleteAuditorium`(?);";
+	
+	final PreparedStatement statement = conn.prepareStatement(sql);
+	statement.closeOnCompletion();
+
+	statement.setInt(1, id);
+
+	int rows  = statement.executeUpdate();
+
+	return rows >= 1;
+    }
+
+    /**
+     * Deletes an auditorium from the storage
+     *
+     * @param id Auditorium ID
+     * @return True if the auditorium was found and successfully removed, otherwise false
+     * @throws SQLSyntaxErrorException SQL Syntax Error
+     * @throws SQLException SQL Error
+     */
+    public static boolean deleteAuditorium(int id)
+	throws SQLSyntaxErrorException, SQLException
+    {
+	// SQL Query
+	String sql = "CALL `deleteAuditorium`(?);";
+	
+	final PreparedStatement statement = conn.prepareStatement(sql);
+	statement.closeOnCompletion();
+
+	statement.setInt(1, id);
+
+	int rows  = statement.executeUpdate();
+
+	return rows >= 1;
+    }
+
+}
