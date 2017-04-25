@@ -12,43 +12,30 @@
 	<header><%@ include file="../header.jsp" %></header>
 		<div class="navbarDiv"><%@ include file="../navBar.jsp" %></div>
 		<main>
-			<div id="auditoriumHeaderDiv">
-				<h2>Administera Salong</h2>
-				<a href="#"><button class="buttonAuditorium" id="addAuditorium">Lägg
+					<div id="auditoriumHeaderDiv">
+				<h2>Administera Film</h2>
+				<a href="#"><button class="buttonMovie" id="addMovie">Lägg
 						till Salong</button></a>
 				<form>
-					<input type="text" class="inputAuditorium"
-						id="editAuditorium" name="editAuditorium" value="Editera Salong">
+					<input type="text" class="inputMovie"
+						id="editMovie" name="editMovie" value="Editera Film">
 				</form>
 			</div>
-			<div id="auditoriumsWrapper">
-			<h2>Aktuella Salonger hos Aueronaut</h2>
-			</div>
-			<div id="auditoriumBodyDiv">
-				<c:forEach items="${auditoriums}" var="auditorium">
-					<div class="auditorium">
-						<a href="GetAuditorium?id=${auditorium.id}"><br>
-						<img alt="auditorium" src="img/auditorum1.png"><br>
-						<c:out value="${auditorium.name}" /><br>
-						</a>
-					</div>
-				</c:forEach>
-			</div>
+		<div id="moviesWrapper">
+	<h2>Aktuella Filmer hos Aeronaut</h2>
+	</div>
+		<div id="movieBodyDiv">
+			<c:forEach items="${movie}" var="movie">
+		<div class="movies">
+			<!-- <c:out value="${movie.id}" /> -->
+			<a href="GetMovie?id=${movie.id}">
+			<c:out value="${movie.title}" />
+			</a>	
+		</div>
+			</c:forEach>
+		</div>
 		</main>
 	<footer><%@ include file="../footer.jsp" %></footer>
 </div>
-
-
-	<h1>Filmer:</h1>
-
-	<c:forEach items="${movie}" var="movie">
-		<h3>
-			<c:out value="${movie.id}" />
-			<a href="Movie?id=${movie.id}" name="id">
-			<c:out value="${movie.title}" />
-			</a>	
-		</h3>
-	</c:forEach>
-
 </body>
 </html>
